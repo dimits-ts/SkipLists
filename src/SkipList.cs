@@ -34,10 +34,13 @@ namespace SkipLists {
         }
 
         public int Size {
-            get{
-                return size;
-            }
+            get;
         }
+
+        internal Comparer<K> Comparer {
+            get;
+        }
+
 
         public SkipList() : this(Comparer<K>.Default){}
 
@@ -49,6 +52,9 @@ namespace SkipLists {
         }
 
         public void Insert(K key, V value) {
+            ThrowIfNull(key);
+
+            size++;
             int height = 1;
             while (CoinFlip())
                 height++;
@@ -99,6 +105,10 @@ namespace SkipLists {
         }
 
         public V Remove(K key) {
+            ThrowIfNull(key);
+            if (size == 0)
+                throw new ArgumentException("Can't remove an element from an empty collection");
+
             Node<K, V> prev = head;
             Node<K, V> curr;
             V value;
@@ -122,6 +132,7 @@ namespace SkipLists {
                             prev = prev.next;
                     }
 
+                    size--;
                     return value;
                 }
 
@@ -131,19 +142,35 @@ namespace SkipLists {
             throw new ArgumentException("There's no object with the provided key."); 
         }
 
+        public bool Remove(K key, V value) {
+            throw new NotImplementedException("I will do this later lol");
+        }
+
         public V Get(K key) {
-            Node<K, V> curr = head;
+            ThrowIfNull(key);
 
-            do { //while not in the bottom
-                while (curr.next != null && !isSmaller(key, curr.next.key)) { //scan forward
-                    curr = curr.next;
-                    if (isEqual(key, curr.key))
-                        return curr.value;
-                }
-                curr = curr.below; //drop down
-            } while (curr.below != null);
+            Node<K, V> node = GetExactPosition(key);
+            if (node == null)
+                return null;
+            else
+                return node.value;
+        }
 
-            return null;
+        public List<KeyValuePair<K,V>> GetAll(K key) {
+            ThrowIfNull(key);
+
+            List<KeyValuePair<K, V>> entries = new List<KeyValuePair<K, V>>();
+            Node<K, V> curr = GetExactPosition(key);
+
+            if (curr == null)
+                return entries;
+
+            while (isEqual(key, curr.key)) {
+                entries.Add(new KeyValuePair<K, V>(curr.key, curr.value));
+                curr = curr.next;
+            }
+
+            return entries;
         }
 
         public List<K> GetKeys() {
@@ -180,8 +207,8 @@ namespace SkipLists {
             return list;
         }
 
-        public List<Entry<K,V>> GetEntries() {
-            List<Entry<K, V>> list = new List<Entry<K, V>>(size);
+        public List<KeyValuePair<K,V>> GetEntries() {
+            List<KeyValuePair<K, V>> list = new List<KeyValuePair<K, V>>(size);
 
             //go to the bottom list
             Node<K, V> curr = head;
@@ -190,38 +217,44 @@ namespace SkipLists {
 
             //fill list with the contents of the bottom list
             while (curr != null) {
-                list.Add(new Entry<K,V>(curr));
+                list.Add(new KeyValuePair<K,V>(curr.key, curr.value));
                 curr = curr.next;
             }
 
             return list;
         }
 
-        public List<Entry<K,V>> GetSublistEntries(K start, K end) {
-            List<Entry<K, V>> ls = new List<Entry<K, V>>();
+        public List<KeyValuePair<K,V>> GetSublistEntries(K start, K end) {
+            ThrowIfNull(start);
+            ThrowIfNull(end);
 
-            if (isSmallerOrEqual(start, end))
+            List<KeyValuePair<K, V>> ls = new List<KeyValuePair<K, V>>();
+
+            if (isBigger(start, end))
                 //this likely indicates a failure in the client's logic so it's not handled in the method itself
                 throw new ArgumentException("The end key precedes the start key"); 
 
             Node<K, V> currNode = GetPosition(start, isSmaller);
             Node<K, V> endNode = GetPosition(end, isSmaller);
-            while (currNode.next != endNode)
-                ls.Add(new Entry<K, V>(currNode));
+
+            while (currNode.next != endNode) {
+                ls.Add(new KeyValuePair<K, V>(currNode.key, currNode.value));
+                currNode = currNode.next;
+            }          
 
             return ls;
         }
 
-        public Entry<K, V> FirstEntry() {
+        public KeyValuePair<K, V> FirstEntry() {
             //find the 2nd node of the bottom list
             Node<K, V> curr = head;
             while (curr.below != null)
                 curr = curr.below;
 
-            return new Entry<K,V>(curr.next);
+            return new KeyValuePair<K, V>(curr.next.key, curr.next.value);
         }
 
-        public Entry<K,V> LastEntry() {
+        public KeyValuePair<K,V> LastEntry() {
             //skip to last node of the bottom list
             Node<K, V> curr = head;
             while(curr.below != null) {
@@ -231,49 +264,59 @@ namespace SkipLists {
                 
                 curr = curr.below;          //drop down
             }
-            return new Entry<K, V>(curr);
+            return new KeyValuePair<K, V>(curr.key, curr.value);
         }
 
         /// <summary>
         /// Returns the entry with a key larger or equal to the provided key.
         /// </summary>
-        /// <returns>An <see cref="Entry{K, V}"/> with a key larger or equal to the provided key.</returns>
-        public Entry<K,V> CeilingEntry(K key) {
+        /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key larger or equal to the provided key.</returns>
+        public KeyValuePair<K,V> CeilingEntry(K key) {
+            ThrowIfNull(key);
+
             Node<K,V> node = GetPosition(key, isSmallerOrEqual);
 
             while (isSmaller(node.key, key))
                 node = node.next;
 
-            return new Entry<K, V>(node);
+            return new KeyValuePair<K, V>(node.key, node.value);
         }
 
         /// <summary>
         /// Returns the entry with a key smaller or equal to the provided key.
         /// </summary>
-        /// <returns>An <see cref="Entry{K, V}"/> with a key smaller or equal to the provided key.</returns>
-        public Entry<K, V> FloorEntry(K key) {
-            return new Entry<K, V>(GetPosition(key, isSmallerOrEqual));
+        /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller or equal to the provided key.</returns>
+        public KeyValuePair<K, V> FloorEntry(K key) {
+            ThrowIfNull(key);
+
+            Node<K, V> node = GetPosition(key, isSmallerOrEqual);
+            return new KeyValuePair<K, V>(node.key, node.value);
         }
 
         /// <summary>
         /// Returns the entry with a key larger than the provided key.
         /// </summary>
-        /// <returns>An <see cref="Entry{K, V}"/> with a key larger or equal to the provided key.</returns>
-        public Entry<K, V> LowerEntry(K key) {
-            return new Entry<K, V>(GetPosition(key, isSmaller));
+        /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key larger or equal to the provided key.</returns>
+        public KeyValuePair<K, V> LowerEntry(K key) {
+            ThrowIfNull(key);
+
+            Node<K, V> node = GetPosition(key, isSmallerOrEqual);
+            return new KeyValuePair<K, V>(node.key, node.value);
         }
 
         /// <summary>
         /// Returns the entry with a key smaller than the provided key.
         /// </summary>
-        /// <returns>An <see cref="Entry{K, V}"/> with a key smaller than the provided key.</returns>
-        public Entry<K, V> HigherEntry(K key) {
+        /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller than the provided key.</returns>
+        public KeyValuePair<K, V> HigherEntry(K key) {
+            ThrowIfNull(key);
+
             Node<K,V> node = GetPosition(key, isSmaller);
 
             while (isSmallerOrEqual(node.key, key))
                 node = node.next;
 
-            return new Entry<K, V>(node);
+            return new KeyValuePair<K, V>(node.key, node.value);
         }
 
         internal String debugPrint() {
@@ -301,7 +344,7 @@ namespace SkipLists {
         /// </summary>
         /// <param name="key">The key with which each node will be compared.</param>
         /// <param name="condition">An aggregate to be used to compare the key and the node.</param>
-        /// <returns>The position of the node that besyt fullfils the comparison.</returns>
+        /// <returns>The position of the node that best fullfils the comparison.</returns>
         private Node<K,V> GetPosition(K key, CompCond condition) {
             Node<K, V> curr = head;
 
@@ -312,6 +355,26 @@ namespace SkipLists {
                     curr = curr.next;
             }
             return curr;
+        }
+
+        private Node<K,V> GetExactPosition(K key) {
+            Node<K, V> curr = head;
+
+            do { //while not in the bottom
+                while (curr.next != null && !isSmaller(key, curr.next.key)) { //scan forward
+                    curr = curr.next;
+                    if (isEqual(key, curr.key))
+                        return curr;
+                }
+                curr = curr.below; //drop down
+            } while (curr.below != null);
+
+            return null;
+        }
+
+        private void ThrowIfNull(K key) {
+            if (key == null)
+                throw new ArgumentNullException("key", "The null value can't be used as a key");
         }
 
         //======================== DELEGATE METHODS ========================
