@@ -51,8 +51,15 @@ namespace SkipLists {
             keyComparer = customComparer;
         }
 
-        public void Insert(K key, V value) {
+        public bool Insert(K key, V value) {
             ThrowIfNull(key);
+
+            //replace value if it already exists
+            Node<K, V> oldNode = GetExactPosition(key); 
+            if (oldNode != null) {
+                oldNode.value = value;
+                return false;
+            }             
 
             size++;
             int height = 1;
@@ -102,6 +109,8 @@ namespace SkipLists {
                 currRow = currRow.below;      //drop down one level
                 curr = currRow;                //reset curr to start of list
             } while (currRow != null);
+
+            return true;
         }
 
         public V Remove(K key) {
@@ -139,11 +148,7 @@ namespace SkipLists {
                 prev = prev.below;  //drop down if you couldn't find the key
             }
             //if no removal
-            throw new ArgumentException("There's no object with the provided key."); 
-        }
-
-        public bool Remove(K key, V value) {
-            throw new NotImplementedException("I will do this later lol");
+            return null;
         }
 
         public V Get(K key) {
@@ -154,23 +159,6 @@ namespace SkipLists {
                 return null;
             else
                 return node.value;
-        }
-
-        public List<KeyValuePair<K,V>> GetAll(K key) {
-            ThrowIfNull(key);
-
-            List<KeyValuePair<K, V>> entries = new List<KeyValuePair<K, V>>();
-            Node<K, V> curr = GetExactPosition(key);
-
-            if (curr == null)
-                return entries;
-
-            while (isEqual(key, curr.key)) {
-                entries.Add(new KeyValuePair<K, V>(curr.key, curr.value));
-                curr = curr.next;
-            }
-
-            return entries;
         }
 
         public List<K> GetKeys() {
