@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -12,8 +12,19 @@ namespace SkipLists {
     /// </summary>
     /// <typeparam name="K">The type of keys used</typeparam>
     /// <typeparam name="V">The type of values used.</typeparam>
-    class SkipListDictionary<K, V> : IDictionary<K, V> where V : class {
-        private SkipList<K, V> dict;
+    public class SkipListDictionary<K, V> : IDictionary<K, V> where V : class {
+        private protected SkipList<K, V> dict;
+
+        /// <summary>
+        /// Creates and returns a read-only wrapper for the dictionary. Users using this wrapper will have access to all the data within, but will 
+        /// be unable to mutate them.<br></br>
+        /// The dictionary can still be modified by using the underlying dictionary reference. To prevent this, create a copy of the dictionary 
+        /// to pass as an argument to the method.
+        /// </summary>
+        /// <param name="dict">The graph to be protected.</param>
+        public static SkipListDictionary<K,V> AsReadOnly(SkipListDictionary<K,V> dict) {
+            return new ReadOnlyDictionary<K,V>(dict.dict);
+        }
 
         /// <summary>
         /// Creates a dictionary with a default key comparer.
@@ -32,7 +43,7 @@ namespace SkipLists {
 
         // ============================= INTERFACE ATTRIBUTES =============================
 
-        public V this[K key] {
+        public virtual V this[K key] {
             get { 
                 return dict.Get(key);
             }
@@ -63,7 +74,7 @@ namespace SkipLists {
             }
         }
 
-        public bool IsReadOnly{
+        public virtual bool IsReadOnly{
             get {
                 return false;
             }
@@ -74,58 +85,56 @@ namespace SkipLists {
         /// <summary>
         /// Returns the first element of the dictionary, that is 
         /// the element with the smallest key according to the <see cref="Comparer{T}"/>.
-        /// 
-        /// If multiple elements with the same key exist, the last inserted will be returned.
         /// </summary>
         /// <returns>A <see cref="KeyValuePair{TKey, TValue}"/> with the lowest key.</returns>
-        public KeyValuePair<K, V> Min() {
+        public virtual KeyValuePair<K, V> Min() {
             return dict.FirstEntry();
         }
 
         /// <summary>
         /// Returns the last element of the dictionary, that is 
         /// the element with the biggest key according to the <see cref="Comparer{T}"/>.
-        /// 
-        /// If multiple elements with the same key exist, the last inserted will be returned.
         /// </summary>
         /// <returns>A <see cref="KeyValuePair{TKey, TValue}"/> with the highest key.</returns>
-        public KeyValuePair<K,V> Max() {
+        public virtual KeyValuePair<K,V> Max() {
             return dict.LastEntry();
         }
 
+        //are these names appropriate if the user chooses reverse ordering?
+
         /// <summary>
-        /// Returns the entry with a key larger or equal to the provided key.
+        /// Returns the smallest entry with a key larger or equal to the provided key.
         /// </summary>
         /// <exception cref="ArgumentNullException">If the key is null.</exception>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key larger or equal to the provided key.</returns>
-        public KeyValuePair<K, V> CeilingEntry(K key) {
+        public virtual KeyValuePair<K, V> CeilingEntry(K key) {
             return dict.CeilingEntry(key);
         }
 
         /// <summary>
-        /// Returns the entry with a key smaller or equal to the provided key.
+        /// Returns the largest entry with a key smaller or equal to the provided key.
         /// </summary>
         /// <exception cref="ArgumentNullException">If the key is null.</exception>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller or equal to the provided key.</returns>
-        public KeyValuePair<K, V> FloorEntry(K key) {
+        public virtual KeyValuePair<K, V> FloorEntry(K key) {
             return dict.FloorEntry(key);
         }
 
         /// <summary>
-        /// Returns the entry with a key smaller than the provided key.
+        /// Returns the entry with a key strictly larger than the provided key.
         /// </summary>
         /// <exception cref="ArgumentNullException">If the key is null.</exception>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller than the provided key.</returns>
-        public KeyValuePair<K, V> HigherEntry(K key) {
+        public virtual KeyValuePair<K, V> HigherEntry(K key) {
             return dict.HigherEntry(key);
         }
 
         /// <summary>
-        /// Returns the entry with a key smaller than the provided key.
+        /// Returns the entry with a key strictly smaller than the provided key.
         /// </summary>
         /// <exception cref="ArgumentNullException">If the key is null.</exception>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller than the provided key.</returns>
-        public KeyValuePair<K, V> LowerEntry(K key) {
+        public virtual KeyValuePair<K, V> LowerEntry(K key) {
             return dict.LowerEntry(key);
         }
 
@@ -146,7 +155,7 @@ namespace SkipLists {
         /// An <see cref="ICollection{T}"/> holding all the elements with keys 
         /// between <c>start</c> and <c>end</c>.
         /// </returns>
-        public ICollection<KeyValuePair<K,V>> Sublist(K start, K end) {
+        public virtual ICollection<KeyValuePair<K,V>> Sublist(K start, K end) {
             return dict.GetSublistEntries(start, end);
         }
 
@@ -167,7 +176,7 @@ namespace SkipLists {
         /// A new <see cref="SkipListDictionary{K, V}"/> holding all the elements with keys 
         /// between <c>start</c> and <c>end</c>.
         /// </returns>
-        public SkipListDictionary<K,V> Submap(K start, K end, Comparer<K> comparer) {
+        public virtual SkipListDictionary<K,V> Submap(K start, K end, Comparer<K> comparer) {
             SkipListDictionary<K, V> map = new SkipListDictionary<K, V>(comparer);
 
             foreach (var entry in Sublist(start, end))
@@ -193,37 +202,37 @@ namespace SkipLists {
         /// A new <see cref="SkipListDictionary{K, V}"/> holding all the elements with keys 
         /// between <c>start</c> and <c>end</c>.
         /// </returns>
-        public SkipListDictionary<K, V> Submap(K start, K end) {
+        public virtual SkipListDictionary<K, V> Submap(K start, K end) {
             return Submap(start, end, dict.Comparer);
         }
 
         // ============================= INTERFACE METHODS =============================
 
-        public void Add(K key, V value) {
+        public virtual void Add(K key, V value) {
             dict.Insert(key, value);
         }
 
-        public void Add(KeyValuePair<K, V> item) {
+        public virtual void Add(KeyValuePair<K, V> item) {
             dict.Insert(item.Key, item.Value);
         }
 
-        public void Clear() {
+        public virtual void Clear() {
             dict = new SkipList<K, V>(dict.Comparer);
         }
 
-        public bool Contains(KeyValuePair<K, V> item) {
-            foreach (KeyValuePair<K, V> entry in dict.GetAll(item.Key))
-                if (item.Value.Equals(entry.Value))
-                    return true;
-
-            return false;
+        public virtual bool Contains(KeyValuePair<K, V> item) {
+            V value = dict.Get(item.Key);
+            if (value != null && value.Equals(item.Value))
+                return true;
+            else
+                return false;
         }
 
-        public bool ContainsKey(K key) {
+        public virtual bool ContainsKey(K key) {
             return dict.Get(key) != null;
         }
 
-        public void CopyTo(KeyValuePair<K, V>[] array, int arrayIndex) {
+        public virtual void CopyTo(KeyValuePair<K, V>[] array, int arrayIndex) {
             if (array == null)
                 throw new ArgumentNullException("array", "The provided array can't be null");
 
@@ -237,11 +246,11 @@ namespace SkipLists {
             }
         }
 
-        public IEnumerator<KeyValuePair<K, V>> GetEnumerator() {
+        public virtual IEnumerator<KeyValuePair<K, V>> GetEnumerator() {
             return dict.GetEntries().GetEnumerator();
         }
 
-        public bool Remove(K key) {
+        public virtual bool Remove(K key) {
             try {
                 dict.Remove(key);
             }
@@ -251,11 +260,11 @@ namespace SkipLists {
             return true;
         }
 
-        public bool Remove(KeyValuePair<K, V> item) {
-            return dict.Remove(item.Key, item.Value);
+        public virtual bool Remove(KeyValuePair<K, V> item) {
+            return dict.Remove(item.Key) != null;
         }
 
-        public bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
+        public virtual bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
             value = dict.Get(key);
 
             if (value == null)
