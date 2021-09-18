@@ -27,6 +27,17 @@ namespace SkipLists {
         }
 
         /// <summary>
+        /// Creates and returns a thread-safe dictionary. The method returns a deep copy, so as
+        /// to guarantee the integrity of the collection under all circumstances.
+        /// </summary>
+        /// <param name="dict">The dictionary to be protected.</param>
+        public static SkipListDictionary<K,V> AsThreadSafe(SkipListDictionary<K,V> dict) {
+            SkipListDictionary<K, V> newDict = new SkipListDictionary<K, V>();
+            newDict.dict = new ConcurrentSkipList<K, V>(dict.dict);
+            return newDict;
+        }
+
+        /// <summary>
         /// Creates a dictionary with a default key comparer.
         /// </summary>
         public SkipListDictionary() {
