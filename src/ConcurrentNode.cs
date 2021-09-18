@@ -1,7 +1,11 @@
-﻿using System.Threading;
+using System.Threading;
 
 namespace SkipLists {
 
+    /// <summary>
+    /// A node implementayion restricting access to its pointers
+    /// via synchronized locks.
+    /// </summary>
     internal sealed class ConcurrentNode<K,V> : Node<K,V> {
 
         private readonly ReaderWriterLockSlim nextLock = new ReaderWriterLockSlim();
@@ -19,13 +23,9 @@ namespace SkipLists {
             }
 
             set {
-                try {
-                    nextLock.EnterWriteLock();
-                    next = value;
-                }
-                finally {
-                    nextLock.ExitWriteLock();
-                }
+                nextLock.EnterWriteLock();
+                next = value;
+                nextLock.ExitWriteLock();    
             }
         }
 
@@ -41,13 +41,9 @@ namespace SkipLists {
             }
 
             set {
-                try {
-                    belowLock.EnterWriteLock();
-                    next = value;
-                }
-                finally {
-                    belowLock.ExitWriteLock();
-                }
+                belowLock.EnterWriteLock();
+                next = value;
+                belowLock.ExitWriteLock();
             }
         }
 
