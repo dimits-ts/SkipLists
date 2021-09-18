@@ -47,10 +47,14 @@ namespace SkipLists {
         public SkipList(Comparer<K> customComparer) {
             size = 0;
             height = 1;
-            head = new Node<K, V>(default(K), default(V));
+            head = BuildNode(default(K), default(V));
             keyComparer = customComparer;
         }
 
+        /// <summary>
+        /// Inserts a key-value pair in the skip list. Returns False if an entry
+        /// with the same key already existed and was replaced.
+        /// </summary>
         public bool Insert(K key, V value) {
             ThrowIfNull(key);
 
@@ -69,8 +73,8 @@ namespace SkipLists {
             //create more levels if needed
             if(height >= this.height) {
                 for(int i=0; i <= height - this.height; i++) { //build as many sentinels as to match height
-                    Node<K,V> newHead = new Node<K, V>();
-                    newHead.below = head;
+                    Node<K,V> newHead = BuildNode();
+                    newHead.Below = head;
                     head = newHead;
                 }
                 this.height = height;
@@ -79,78 +83,88 @@ namespace SkipLists {
             //find current level
             Node<K, V> curr = head;
             for(int i=0; i <= this.height - height - 1; i++) 
-                curr = curr.below;
+                curr = curr.Below;
 
             //tower creation
             Node<K, V> currRow = curr;             //keep reference to first node of current tower
             Node<K, V> lastCreatedNode = null;
             do {                       
-                while (curr.next != null && !isSmaller(key, curr.next.key)) //scan till you find the right position
-                    curr = curr.next;
+                while (curr.Next != null && !isSmaller(key, curr.Next.key)) //scan till you find the right position
+                    curr = curr.Next;
 
-                Node<K, V> nextNode;                 //old next node, to be bypassed
-                if (curr.next == null)
+                Node<K, V> nextNode;                 //old Next node, to be bypassed
+                if (curr.Next == null)
                     nextNode = null;
                 else
-                    nextNode = curr.next.next;
+                    nextNode = curr.Next.Next;
 
-                Node<K, V> newNode = new Node<K, V>(key, value);
+                Node<K, V> newNode = BuildNode(key, value);
 
                 if (lastCreatedNode != null)            //if not the first node that's created
-                    lastCreatedNode.below = newNode;    //link it to tower
+                    lastCreatedNode.Below = newNode;    //link it to tower
 
                 //update created node's references
                 lastCreatedNode = newNode;
-                curr.next = newNode;
-                newNode.next = nextNode;
+                curr.Next = newNode;
+                newNode.Next = nextNode;
                 
              
                 //reset
-                currRow = currRow.below;      //drop down one level
+                currRow = currRow.Below;      //drop down one level
                 curr = currRow;                //reset curr to start of list
             } while (currRow != null);
 
             return true;
         }
 
+        /// <summary>
+        /// Removes the entry with the specified key, returning its value,
+        /// or null if an entry with that key didn't exist.
+        /// </summary>
+        ///<exception cref="InvalidOperationException">If the list is empty.</exception>
+        ///<exception cref="ArgumentNullException">If the key is null.</exception>
         public V Remove(K key) {
             ThrowIfNull(key);
-            if (size == 0)
-                throw new ArgumentException("Can't remove an element from an empty collection");
+            ThrowIfEmpty();
 
             Node<K, V> prev = head;
             Node<K, V> curr;
             V value;
 
             while(prev != null) { //while not on the bottom list
-                curr = prev.next;
+                curr = prev.Next;
                
                 while (curr != null && isBigger(key, curr.key)) { //scan current list
-                    prev = prev.next;
-                    curr = curr.next;
+                    prev = prev.Next;
+                    curr = curr.Next;
                 }
 
                 if(curr != null && isEqual(key, curr.key)) { //start deleting all nodes from the tower
                     value = curr.value;
 
                     while(prev != null) {
-                        curr = prev.next;
-                        prev.next = curr.next;  //remove node
-                        prev = prev.below;      //and drop down
-                        while (prev != null && prev.next != null && !isEqual(prev.next.key, key)) //find next node to remove in current list
-                            prev = prev.next;
+                        curr = prev.Next;
+                        prev.Next = curr.Next;  //remove node
+                        prev = prev.Below;      //and drop down
+                        while (prev != null && prev.Next != null && !isEqual(prev.Next.key, key)) //find Next node to remove in current list
+                            prev = prev.Next;
                     }
 
                     size--;
                     return value;
                 }
 
-                prev = prev.below;  //drop down if you couldn't find the key
+                prev = prev.Below;  //drop down if you couldn't find the key
             }
             //if no removal
             return null;
         }
 
+        /// <summary>
+        /// Returns the value of the entry with the specified key,
+        /// null if no such entry is found.
+        /// </summary>
+        ///<exception cref="ArgumentNullException">If the key is null.</exception>
         public V Get(K key) {
             ThrowIfNull(key);
 
@@ -161,57 +175,72 @@ namespace SkipLists {
                 return node.value;
         }
 
+        /// <summary>
+        /// Returtns a list with all the keys contained in the list.
+        /// </summary>
         public List<K> GetKeys() {
             List<K> list = new List<K>(size);
 
             //go to the bottom list
             Node<K, V> curr = head;
-            while (curr.below != null)
-                curr = curr.below;
+            while (curr.Below != null)
+                curr = curr.Below;
 
             //fill list with the contents of the bottom list
             while (curr != null) {
                 list.Add(curr.key);
-                curr = curr.next;
+                curr = curr.Next;
             }
 
             return list;
         }
 
+        /// <summary>
+        /// Returtns a list with all the cvalues contained in the list.
+        /// </summary>
         public List<V> GetValues() {
             List<V> list = new List<V>(size);
 
             //go to the bottom list
             Node<K, V> curr = head;
-            while (curr.below != null)
-                curr = curr.below;
+            while (curr.Below != null)
+                curr = curr.Below;
 
             //fill list with the contents of the bottom list
             while(curr != null) {
                 list.Add(curr.value);
-                curr = curr.next;
+                curr = curr.Next;
             }
 
             return list;
         }
 
+        /// <summary>
+        /// Returtns a list with all the <see cref="KeyValuePair{TKey, TValue}"/>s contained in the list.
+        /// </summary>
         public List<KeyValuePair<K,V>> GetEntries() {
             List<KeyValuePair<K, V>> list = new List<KeyValuePair<K, V>>(size);
 
             //go to the bottom list
             Node<K, V> curr = head;
-            while (curr.below != null)
-                curr = curr.below;
+            while (curr.Below != null)
+                curr = curr.Below;
 
             //fill list with the contents of the bottom list
             while (curr != null) {
                 list.Add(new KeyValuePair<K,V>(curr.key, curr.value));
-                curr = curr.next;
+                curr = curr.Next;
             }
 
             return list;
         }
 
+        /// <summary>
+        /// Returns an ordered collection containing the elements with keys between
+        /// the <c>start</c> and <c>end</c> keys.
+        /// </summary>
+        ///<exception cref="InvalidOperationException">If the list is empty.</exception>
+        ///<exception cref="ArgumentNullException">If any of the keys is null.</exception>
         public List<KeyValuePair<K,V>> GetSublistEntries(K start, K end) {
             ThrowIfNull(start);
             ThrowIfNull(end);
@@ -225,32 +254,44 @@ namespace SkipLists {
             Node<K, V> currNode = GetPosition(start, isSmaller);
             Node<K, V> endNode = GetPosition(end, isSmaller);
 
-            while (currNode.next != endNode) {
+            while (currNode.Next != endNode) {
                 ls.Add(new KeyValuePair<K, V>(currNode.key, currNode.value));
-                currNode = currNode.next;
+                currNode = currNode.Next;
             }          
 
             return ls;
         }
 
+        /// <summary>
+        /// Get the entry with the smallest key.
+        /// </summary>
+        ///<exception cref = "InvalidOperationException" > If the list is empty.</exception>
         public KeyValuePair<K, V> FirstEntry() {
+            ThrowIfEmpty();
+
             //find the 2nd node of the bottom list
             Node<K, V> curr = head;
-            while (curr.below != null)
-                curr = curr.below;
+            while (curr.Below != null)
+                curr = curr.Below;
 
-            return new KeyValuePair<K, V>(curr.next.key, curr.next.value);
+            return new KeyValuePair<K, V>(curr.Next.key, curr.Next.value);
         }
 
+        /// <summary>
+        /// Get the entry with the biggest key.
+        /// </summary>
+        ///<exception cref = "InvalidOperationException" > If the list is empty.</exception>
         public KeyValuePair<K,V> LastEntry() {
+            ThrowIfEmpty();
+
             //skip to last node of the bottom list
             Node<K, V> curr = head;
-            while(curr.below != null) {
+            while(curr.Below != null) {
 
-                while(curr.next != null)    //go to end of current list
-                    curr = curr.next;
+                while(curr.Next != null)    //go to end of current list
+                    curr = curr.Next;
                 
-                curr = curr.below;          //drop down
+                curr = curr.Below;          //drop down
             }
             return new KeyValuePair<K, V>(curr.key, curr.value);
         }
@@ -259,13 +300,16 @@ namespace SkipLists {
         /// Returns the entry with a key larger or equal to the provided key.
         /// </summary>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key larger or equal to the provided key.</returns>
+        /// <exception cref="InvalidOperationException">If the list is empty.</exception>
+        /// <exception cref="ArgumentNullException">If the key is null.</exception>
         public KeyValuePair<K,V> CeilingEntry(K key) {
             ThrowIfNull(key);
+            ThrowIfEmpty();
 
             Node<K,V> node = GetPosition(key, isSmallerOrEqual);
 
             while (isSmaller(node.key, key))
-                node = node.next;
+                node = node.Next;
 
             return new KeyValuePair<K, V>(node.key, node.value);
         }
@@ -274,8 +318,11 @@ namespace SkipLists {
         /// Returns the entry with a key smaller or equal to the provided key.
         /// </summary>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller or equal to the provided key.</returns>
+        /// <exception cref="InvalidOperationException">If the list is empty.</exception>
+        /// <exception cref="ArgumentNullException">If the key is null.</exception>
         public KeyValuePair<K, V> FloorEntry(K key) {
             ThrowIfNull(key);
+            ThrowIfEmpty();
 
             Node<K, V> node = GetPosition(key, isSmallerOrEqual);
             return new KeyValuePair<K, V>(node.key, node.value);
@@ -285,8 +332,11 @@ namespace SkipLists {
         /// Returns the entry with a key larger than the provided key.
         /// </summary>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key larger or equal to the provided key.</returns>
+        /// <exception cref="InvalidOperationException">If the list is empty.</exception>
+        /// <exception cref="ArgumentNullException">If the key is null.</exception>
         public KeyValuePair<K, V> LowerEntry(K key) {
             ThrowIfNull(key);
+            ThrowIfEmpty();
 
             Node<K, V> node = GetPosition(key, isSmallerOrEqual);
             return new KeyValuePair<K, V>(node.key, node.value);
@@ -296,13 +346,16 @@ namespace SkipLists {
         /// Returns the entry with a key smaller than the provided key.
         /// </summary>
         /// <returns>An <see cref="KeyValuePair{K, V}"/> with a key smaller than the provided key.</returns>
+        /// <exception cref="InvalidOperationException">If the list is empty.</exception>
+        /// <exception cref="ArgumentNullException">If the key is null.</exception>
         public KeyValuePair<K, V> HigherEntry(K key) {
             ThrowIfNull(key);
+            ThrowIfEmpty();
 
             Node<K,V> node = GetPosition(key, isSmaller);
 
             while (isSmallerOrEqual(node.key, key))
-                node = node.next;
+                node = node.Next;
 
             return new KeyValuePair<K, V>(node.key, node.value);
         }
@@ -316,15 +369,25 @@ namespace SkipLists {
 
                 while (curr != null) {
                     str += curr.key + " ";
-                    curr = curr.next;
+                    curr = curr.Next;
                 }
                     
                 str += "\n";
-                currRow = currRow.below;
+                currRow = currRow.Below;
             } while (currRow != null);
 
             return str;
         }
+
+        //builder methods
+
+        private protected virtual Node<K, V> BuildNode(K key, V value) {
+            return new Node<K, V>(key, value);
+        }
+        private protected virtual Node<K, V> BuildNode() {
+            return new Node<K, V>();
+        }
+
 
         /// <summary>
         /// Returns the right-most node whose key fullfils the provided ComparisonCondition
@@ -336,11 +399,11 @@ namespace SkipLists {
         private Node<K,V> GetPosition(K key, CompCond condition) {
             Node<K, V> curr = head;
 
-            while(curr.below != null) {
-                curr = curr.below;
+            while(curr.Below != null) {
+                curr = curr.Below;
 
-                while (curr.next != null && condition(curr.next.key, key)) 
-                    curr = curr.next;
+                while (curr.Next != null && condition(curr.Next.key, key)) 
+                    curr = curr.Next;
             }
             return curr;
         }
@@ -349,13 +412,13 @@ namespace SkipLists {
             Node<K, V> curr = head;
 
             do { //while not in the bottom
-                while (curr.next != null && !isSmaller(key, curr.next.key)) { //scan forward
-                    curr = curr.next;
+                while (curr.Next != null && !isSmaller(key, curr.Next.key)) { //scan forward
+                    curr = curr.Next;
                     if (isEqual(key, curr.key))
                         return curr;
                 }
-                curr = curr.below; //drop down
-            } while (curr.below != null);
+                curr = curr.Below; //drop down
+            } while (curr != null && curr.Below != null);
 
             return null;
         }
@@ -363,6 +426,11 @@ namespace SkipLists {
         private void ThrowIfNull(K key) {
             if (key == null)
                 throw new ArgumentNullException("key", "The null value can't be used as a key");
+        }
+
+        private void ThrowIfEmpty() {
+            if (size == 0)
+                throw new InvalidOperationException("There are no entries in the collection");
         }
 
         //======================== DELEGATE METHODS ========================
