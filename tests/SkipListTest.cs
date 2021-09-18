@@ -67,14 +67,7 @@ namespace Tests {
             Console.WriteLine("After removal 34:");
             Console.WriteLine(ls.debugPrint());
 #endif
-            bool caught = false;
-            try {
-                ls.Remove(34);
-            }
-            catch (ArgumentException) {
-                caught = true;
-            }
-            Assert.IsTrue(caught);   
+             Assert.IsNull(ls.Remove(34));  
         }
 
         [TestMethod]
