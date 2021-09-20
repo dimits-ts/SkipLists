@@ -4,8 +4,9 @@ using System;
 using SkipLists;
 
 namespace Tests {
+
     [TestClass]
-    public class UnitTest1 {
+    public class SkipListTest {
         private static int OBJECT_COUNT = 50;
 
         [TestMethod]
@@ -25,7 +26,7 @@ namespace Tests {
             for (int i = 0; i <= OBJECT_COUNT; i++)
                 ls.Insert(i, i.ToString());
             
-            Assert.IsTrue(ls.Get(23).Equals("23"));
+            Assert.IsTrue(ls.Get(23).Value.Equals("23"));
         }
 
         [TestMethod]
@@ -38,36 +39,35 @@ namespace Tests {
             Console.WriteLine(ls.debugPrint());
 #endif
             ls.Remove(2);
-            Assert.IsNull(ls.Get(2));
+            Assert.IsTrue(ls.Get(2).IsNull);
 #if PRINT
             Console.WriteLine("After removal 2:");
             Console.WriteLine(ls.debugPrint());
 #endif
             ls.Remove(3);
-            Assert.IsNull(ls.Get(3));
+            Assert.IsTrue(ls.Get(3).IsNull);
 #if PRINT
             Console.WriteLine("After removal 3:");
             Console.WriteLine(ls.debugPrint());
 #endif
             ls.Remove(40);
-            Assert.IsNull(ls.Get(40));
+            Assert.IsTrue(ls.Get(40).IsNull);
 #if PRINT
             Console.WriteLine("After removal 40:");
             Console.WriteLine(ls.debugPrint());
 #endif
             ls.Remove(5);
-            Assert.IsNull(ls.Get(5));
+            Assert.IsTrue(ls.Get(5).IsNull);
 #if PRINT
             Console.WriteLine("After removal 5:");
             Console.WriteLine(ls.debugPrint());
 #endif
             ls.Remove(34);
-            Assert.IsNull(ls.Get(34));
+            Assert.IsTrue(ls.Get(34).IsNull);
 #if PRINT
             Console.WriteLine("After removal 34:");
             Console.WriteLine(ls.debugPrint());
 #endif
-             Assert.IsNull(ls.Remove(34));  
         }
 
         [TestMethod]
@@ -83,5 +83,7 @@ namespace Tests {
             Assert.AreEqual(ls.CeilingEntry(44).Key, 44);
             Assert.AreEqual(ls.FloorEntry(44).Key, 44);
         }
+
+        
     }
 }
