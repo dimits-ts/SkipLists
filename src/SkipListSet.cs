@@ -8,7 +8,7 @@ namespace SkipLists {
     /// A sorted set implemented with a Skip List.
     /// </summary>
     /// <typeparam name="T">The values' type.</typeparam>
-    public class SkipListSet<T> : ISet<T> where T: class {
+    public class SkipListSet<T> : ISet<T> {
         private protected SkipList<T,T> set;
 
         /// <summary>
