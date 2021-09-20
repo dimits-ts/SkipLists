@@ -14,7 +14,7 @@ namespace SkipLists {
     /// </summary>
     /// <typeparam name="K">The type of keys used</typeparam>
     /// <typeparam name="V">The type of values used.</typeparam>
-    internal class SkipList<K,V> where V : class {
+    internal class SkipList<K,V> {
         private static readonly Random generator = new Random(DateTime.Now.GetHashCode());
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace SkipLists {
         /// </summary>
         ///<exception cref="InvalidOperationException">If the list is empty.</exception>
         ///<exception cref="ArgumentNullException">If the key is null.</exception>
-        public V Remove(K key) {
+        public Pointer<V> Remove(K key) {
             ThrowIfNull(key);
             ThrowIfEmpty();
 
@@ -151,13 +151,13 @@ namespace SkipLists {
                     }
 
                     size--;
-                    return value;
+                    return new Pointer<V>(value);
                 }
 
                 prev = prev.Below;  //drop down if you couldn't find the key
             }
             //if no removal
-            return null;
+            return new Pointer<V>();
         }
 
         /// <summary>
@@ -165,14 +165,14 @@ namespace SkipLists {
         /// null if no such entry is found.
         /// </summary>
         ///<exception cref="ArgumentNullException">If the key is null.</exception>
-        public V Get(K key) {
+        public Pointer<V> Get(K key) {
             ThrowIfNull(key);
 
             Node<K, V> node = GetExactPosition(key);
             if (node == null)
-                return null;
+                return new Pointer<V>();
             else
-                return node.value;
+                return new Pointer<V>(node.value);
         }
 
         /// <summary>
