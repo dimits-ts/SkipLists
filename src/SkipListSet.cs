@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -8,7 +8,7 @@ namespace SkipLists {
     /// A sorted set implemented with a Skip List.
     /// </summary>
     /// <typeparam name="T">The values' type.</typeparam>
-    public class SkipListSet<T> : ISet<T> where T: class {
+    public class SkipListSet<T> : ISet<T> {
         private protected SkipList<T,T> set;
 
         /// <summary>
@@ -20,6 +20,17 @@ namespace SkipLists {
         /// <param name="set">The set to be protected.</param>
         public static SkipListSet<T> AsReadOnly(SkipListSet<T> set) {
             return new ReadOnlySet<T>(set.set);
+        }
+
+        /// <summary>
+        /// Creates and returns a thread-safe set. The method returns a deep copy, so as
+        /// to guarantee the integrity of the collection under all circumstances.
+        /// </summary>
+        /// <param name="set">The set to be protected.</param>
+        public static SkipListSet<T> AsThreadSafe(SkipListSet<T> set) {
+            SkipListSet<T> newSet = new SkipListSet<T>();
+            newSet.set = new ConcurrentSkipList<T, T>(set.set);
+            return newSet;
         }
 
         public int Count {

@@ -12,7 +12,7 @@ namespace SkipLists {
     /// </summary>
     /// <typeparam name="K">The type of keys used</typeparam>
     /// <typeparam name="V">The type of values used.</typeparam>
-    public class SkipListDictionary<K, V> : IDictionary<K, V> where V : class {
+    public class SkipListDictionary<K, V> : IDictionary<K, V> {
         private protected SkipList<K, V> dict;
 
         /// <summary>
@@ -24,6 +24,17 @@ namespace SkipLists {
         /// <param name="dict">The graph to be protected.</param>
         public static SkipListDictionary<K,V> AsReadOnly(SkipListDictionary<K,V> dict) {
             return new ReadOnlyDictionary<K,V>(dict.dict);
+        }
+
+        /// <summary>
+        /// Creates and returns a thread-safe dictionary. The method returns a deep copy, so as
+        /// to guarantee the integrity of the collection under all circumstances.
+        /// </summary>
+        /// <param name="dict">The dictionary to be protected.</param>
+        public static SkipListDictionary<K,V> AsThreadSafe(SkipListDictionary<K,V> dict) {
+            SkipListDictionary<K, V> newDict = new SkipListDictionary<K, V>();
+            newDict.dict = new ConcurrentSkipList<K, V>(dict.dict);
+            return newDict;
         }
 
         /// <summary>
@@ -45,7 +56,7 @@ namespace SkipLists {
 
         public virtual V this[K key] {
             get { 
-                return dict.Get(key);
+                return dict.Get(key).Value;
             }
 
             set {
@@ -221,7 +232,7 @@ namespace SkipLists {
         }
 
         public virtual bool Contains(KeyValuePair<K, V> item) {
-            V value = dict.Get(item.Key);
+            V value = dict.Get(item.Key).Value;
             if (value != null && value.Equals(item.Value))
                 return true;
             else
@@ -251,13 +262,10 @@ namespace SkipLists {
         }
 
         public virtual bool Remove(K key) {
-            try {
-                dict.Remove(key);
-            }
-            catch (ArgumentException) {
+            if (dict.Remove(key).IsNull)
                 return false;
-            }
-            return true;
+            else
+                return true;
         }
 
         public virtual bool Remove(KeyValuePair<K, V> item) {
@@ -265,9 +273,10 @@ namespace SkipLists {
         }
 
         public virtual bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
-            value = dict.Get(key);
+            Pointer<V> query = dict.Get(key);
+            value = query.Value;
 
-            if (value == null)
+            if (query.IsNull)
                 return false;
             else
                 return true;

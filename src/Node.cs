@@ -1,9 +1,20 @@
-﻿namespace SkipLists {
+namespace SkipLists {
+
     internal class Node<K,V> {
-        internal Node<K,V> next;
-        internal Node<K,V> below;
-        internal K key;
-        internal V value;
+        private protected Node<K,V> next;
+        private protected Node<K,V> below;
+        internal protected K key;
+        internal protected V value;
+
+        internal virtual Node<K,V> Next {
+            get;
+            set;
+        }
+
+        internal virtual Node<K,V> Below {
+            get;
+            set;
+        }
 
         internal Node(K key, V value) {
             this.key = key;
