@@ -14,8 +14,11 @@ namespace Tests {
             SkipList<int, string> ls = new SkipList<int, string>();
             Console.WriteLine("Before:");
             Console.WriteLine(ls.debugPrint());
+
+            Random r = new Random();
             for (int i = 0; i <= OBJECT_COUNT; i++)
-                ls.Insert(i, i.ToString());
+                ls.Insert(r.Next(100), r.Next().ToString());
+
             Console.WriteLine("After insertion:");
             Console.WriteLine(ls.debugPrint());
         }
