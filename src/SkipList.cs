@@ -34,11 +34,15 @@ namespace SkipLists {
         }
 
         public int Size {
-            get;
+            get {
+                return size;
+            }
         }
 
         internal Comparer<K> Comparer {
-            get;
+            get {
+                return keyComparer;
+            }
         }
 
 
@@ -186,6 +190,8 @@ namespace SkipLists {
             while (curr.Below != null)
                 curr = curr.Below;
 
+            curr = curr.Next;
+
             //fill list with the contents of the bottom list
             while (curr != null) {
                 list.Add(curr.key);
@@ -205,6 +211,8 @@ namespace SkipLists {
             Node<K, V> curr = head;
             while (curr.Below != null)
                 curr = curr.Below;
+
+            curr = curr.Next;
 
             //fill list with the contents of the bottom list
             while(curr != null) {

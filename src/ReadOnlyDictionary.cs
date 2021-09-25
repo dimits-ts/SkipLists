@@ -17,6 +17,10 @@ namespace SkipLists {
         }
 
         public override V this[K key] {
+            get {
+                return dict.Get(key).Value;
+            }
+            
             set {
                 throw new NotSupportedException(errorMessage);
             }
